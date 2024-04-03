@@ -60,7 +60,7 @@ model = cflow.lightning_model.Cflow(
     )
 ```
 #### 1. <font color=red>encoder结构</font>，这里跟着论文结构图理解，如图中红框部分：  
-![encoder](encoder.jpg "Encoder")
+![PE](https://github.com/Bpumpkin/Code-Understand/blob/main/cflow/fig/encoder.jpg "Position Embedding")
 > 代码实现也比较简单，代码里直接根据名字调用了'wide_resnet50_2'，如上述Cflow中backbone的定义，目的是输出decoder的特征输入z，一层一层往下走(timm.py)可以看到encoder部分模型的实现代码如下：
 ```python
 model = timm.create_model(
@@ -81,7 +81,7 @@ features = dict(zip(self.layers, self.feature_extractor(inputs), strict=True))
 model.model.encoder = ownmodel(args)
 ```
 #### 2. <font color=red>Position Embedding</font>，对应decoder的条件输入c，如图中红框部分：  
-![encoder](PE.jpg "Encoder")
+![encoder](https://github.com/Bpumpkin/Code-Understand/blob/main/cflow/fig/PE.jpg "Encoder")
 > 代码实现调用了utils.py中的positional_encoding_2d()函数，目的是包含特征空间位置的正弦和余弦谐波，以个人觉得这个不需要详细理解代码，直接用就行，有兴趣可以再讨论。一层一层往下走(torch_model.py)可以看到PE部分的实现代码如下：
 ```python
 pos_encoding = einops.repeat(
@@ -91,7 +91,7 @@ pos_encoding = einops.repeat(
             ).to(images.device)
 ```
 #### 3. <font color=red>Decoder结构</font>，如图中红框部分：  
-![encoder](decoder.jpg "Encoder")
+![decoder](https://github.com/Bpumpkin/Code-Understand/blob/main/cflow/fig/decoder.jpg "Decoder")
 > 这个地方是论文的创新点之一，就是条件归一化流模型，利用包含位置信息的Position Embedding作为条件，更好地进行缺陷定位。归一化流模型是一个概率生成模型，目的是估计特征向量z的对数似然，区分缺陷特征与正常特征。需要注意的是因为要处理不同尺度的特征z，所以decoder是有k个。代码实现调用了utils.py中的cflow_head()函数，可以看到decoder部分的实现代码如下：
 ```python
 coder = SequenceINN(n_features)
